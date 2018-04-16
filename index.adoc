@@ -263,6 +263,11 @@ En `tabs.html` reemplazamos el contenido por este:
 <1> `SelectedIndex` permite especificar la pestaña seleccionada de forma predetermianda. Su valor por defecto es 0, que es la primera pestaña.
 <2> Configuración de una pestaña indicando icono, texto y página asociada.
 
+[NOTE]
+====
+Normalmente la barra de pestañas siempre estará disponible en la aplicación. Para ello, hay que cambiar en `app.component.ts` el valor de `rootPage` para que cargue la página de las pestañas.
+====
+
 .Ir a una página de la barra de pestañas
 ****
 Cuando se trabaja con pestañas los botones no deben manejar directamente la pila de páginas, ya que la barra de pestañas no se actualizaría y activaría el icono correspondiente. Para ello usaremos el `parent.select(index)` sobre `navCtrl` para saltar a la página con el índice indicado contado desde 0.
