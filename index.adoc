@@ -1,0 +1,492 @@
+////
+NO CAMBIAR!!
+Codificación, idioma, tabla de contenidos, tipo de documento
+////
+:encoding: utf-8
+:lang: es
+:toc: right
+:toc-title: Tabla de contenidos
+:doctype: book
+:imagesdir: ./images
+
+
+
+
+////
+Nombre y título del trabajo
+////
+# Navegación entre páginas en aplicaciones Ionic
+Desarrollo de Aplicaciones Híbridas
+Msáter TAII - UAL
+
+// NO CAMBIAR!! (Entrar en modo no numerado de apartados)
+:numbered!: 
+
+
+[abstract]
+## Resumen
+
+Veremos las distintas formas de navegación que podemos usar en Ionic.
+
+.Objetivos
+
+* Explicación teórica del manejo de las páginas en ionic
+* Usaremos componentes de ionic como el NavController, ModalController
+* Implementando el sistema de Tabs manualmente
+* Implementar un menú lateral manualmente
+* Uso de modals
+* Retorno de un modal
+* Envío de parámetros entre páginas y entre modals.
+* Retorno con parámetros de un modal
+* Cambios disponibles en la configuración por defecto de ionic
+
+
+// Entrar en modo numerado de apartados
+:numbered:
+
+## Introducción
+
+La primera página es conocida como _root_
+Los tabs crean varios _roots_ que se manejan de forma independiente, cada uno con su propia pila de páginas
+
+### Configuración inicial del proyecto
+
+Creamos un proyecto nuevo denominado `navegacion` a partir de la plantilla `blank`
+
+[source]
+----
+ionic start navegacion blank
+----
+
+Dentro de la carpeta del proyecto creamos una serie de páginas con el CLI 
+
+
+[source]
+----
+ionic generate page principal
+ionic generate page pagina2
+ionic generate page pagina3
+ionic generate page ajustes
+ionic generate page ajustes2
+ionic generate page modal
+ionic generate page tabs
+----
+
+A continuación, editamos el `src/app/app.module.ts`  para añadir las páginas creadas a los arrays `declarations` y `entryCompononents`. También será necesario añadir la sentencias `import` que añaden las páginas al `src/app/app.module.ts` si no lo añade automáticamente el editor que estemos usando 
+
+
+### Modificación de la página principal
+
+Para hacer que la página `home` creada automáticamente al crear el proyecto deje de ser la página principal, y `principal` pasea a ser la nueva página principal haremos 3 cambios:
+
+1. Eliminar la carpeta `src/pages/home`
+1. Modificar el archivo `src/app/app.module.ts` eliminando la importación de `HomePage` y eliminando las ocurrencias de `HomePage` en los arrays `declarations` y `entryComponents`.
+1. Modificar el archivo `src/app/app.component.ts` sustituyendo el valor de `rootPage` al inicio de la clase `MyApp` por `PrincipalPage`. Sustituir también el `import` de la página `HomePage` por el de `PrincipalPage`
+
+[source]
+----
+...
+import { PrincipalPage } from './../pages/principal/principal'; <1>
+
+....
+export class MyApp {
+  rootPage:any = PrincipalPage; <2>
+....
+----
+<1> Importación de la nueva página de inicio
+<2> Asignación de `PrincipalPage` como nueva página de inicio
+
+### Navegar entre páginas
+
+Crearemos un botón para ir desde la página principal a la página 2.
+
+Añadimos el botón en `principal.html`
+
+[source]
+----
+  <button ion-button
+    block
+    color="primary"
+    (click)="irPagina()">
+    Ir a página 2
+  </button>
+----
+
+Añadimos el método `irPagina()` en `principal.ts` 
+
+[source]
+----
+  irPagina() {
+    this.navCtrl.push("Pagina2Page");
+  }
+----
+
+[IMPORTANT]
+====
+Si recibimos un error al actualizar la aplicación indicando que `Pagina2Page` está siendo importada dos veces (una en `pagina2.module.ts` y otra en `app.module.ts`, eliminaremos la importación de `Pagina2Page` de `src/app/app.module.ts` así como de los arrays `declarations` y `entryComponents`.
+====
+
+### Paso de parámetros entre páginas
+
+Declaramos un array de películas en `Pagina2Page` para mostrarlo en una lista de forma que al pulsar un elemento de la lista iremos a una página de detalle y mostraremos información sobre el elemento seleccionado.
+
+En `src/pages/pagina2/pagina2.ts`
+
+[source]
+----
+export class Pagina2Page {
+  peliculas: any[] = [ <1>
+    {"titulo": "Encadenados", "director": "Alfred Hitchcock"},
+    {"titulo": "Casino", "director": "Martin Scorsesse"}
+  ]
+
+  ....
+  
+  mostrarDetalles(pelicula) {
+    this.navCtrl.push(Pagina3Page, {'pelicula': pelicula}); <2>
+  }
+
+}
+----
+<1> Declaración de un array de películas
+<2> Ir a `Pagina3Page` pasando un parámetro denominado `pelicula` inicializado con el objeto `pelicula`.
+
+En `src/pages/pagina2/pagina2.html`
+
+[source]
+----
+<ion-content>
+  <ion-list>
+    <ion-item *ngFor="let pelicula of peliculas" (click)="mostrarDetalles(pelicula)"> <1>
+      {{ pelicula.titulo }}
+    </ion-item>
+  </ion-list>
+----
+<1> Asignación del método que controla la acción del `click`
+
+Y en la página de destino (`Pagina3Page`):
+
+En `src/pages/pagina3/pagina3.ts`
+
+[source]
+----
+  ionViewDidLoad() {
+    this.pelicula = this.navParams.get('pelicula'); <1>
+  }
+----
+<1> Capturar el parámetro `pelicula` 
+
+En `src/pages/pagina3/pagina3.html`
+
+[source]
+----
+<ion-header>
+  <ion-navbar>
+    <ion-title>{{ pelicula.titulo }}</ion-title> <1>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+  {{ pelicula.director }} <2>
+</ion-content>
+----
+<1> Uso de la propiedad `titulo`
+<2> Uso de la propiedad `director`
+
+### Volver atrás y a la página principal
+
+En `Pagina3Page` definimos dos métodos:
+
+[source]
+----
+  irAtras() {
+    this.navCtrl.pop();
+  }
+
+  irPrincipal() {
+    this.navCtrl.popToRoot();
+  }
+----
+
+[NOTE]
+====
+`navCtrl` tambien dispone de un método `popTo()` que permite volver directamente a la página que le indiquemos.
+====
+
+En el arvhivo HTML creamos dos botones para los dos métodos anteriores:
+
+[source]
+----
+  <button ion-button block color="primary" (click)="irAtras()">
+    Ir atrás
+  </button>
+
+  <button ion-button block color="secondary" (click)="irPrincipal()">
+    Ir página principal
+  </button>
+----
+
+### Pestañas (Tabs)
+
+Vamos a crear una barra de pestañas con la página principal y la de ajustes
+
+En `tabs.ts`
+
+[source]
+----
+import { PrincipalPage } from './../principal/principal'; <1>
+import { Ajustes2Page } from '../ajustes2/ajustes2';
+....
+
+export class TabsPage {
+  tab1: any; <2>
+  tab2: any;
+
+  constructor(public navCtrl: NavController, public navParams: NavParams) {
+    this.tab1 = PrincipalPage; <3>
+    this.tab2 = Ajustes2Page;
+  }
+----
+<1> Importar las páginas a usar en la barra de pestañas
+<2> Variables de instancia para cada pestaña
+<3> Asignación de páginas a las variables de instancia de las páginas
+
+En `tabs.html` reemplazamos el contenido por este:
+
+[source]
+----
+<ion-tabs selectedIndex = 1> <1>
+  <ion-tab tabIcon="water" tabTitle="Principal" [root]="tab1"></ion-tab> <2>
+  <ion-tab tabIcon="leaf" tabTitle="Ajustes" [root]="tab2"></ion-tab>
+</ion-tabs>
+----
+<1> `SelectedIndex` permite especificar la pestaña seleccionada de forma predetermianda. Su valor por defecto es 0, que es la primera pestaña.
+<2> Configuración de una pestaña indicando icono, texto y página asociada.
+
+.Ir a una página de la barra de pestañas
+****
+Cuando se trabaja con pestañas los botones no deben manejar directamente la pila de páginas, ya que la barra de pestañas no se actualizaría y activaría el icono correspondiente. Para ello usaremos el `parent.select(index)` sobre `navCtrl` para saltar a la página con el índice indicado contado desde 0.
+
+El código siguiente muestra un método para ir a la página de Ajustes en la barra de pestañas
+
+[source]
+----
+  irAjustes() {
+    this.navCtrl.parent.select(1);
+  }
+----
+****
+
+### Páginas modales
+
+Las páginas modales no son gestionadas con `NavController`. Para la creación se usa `ModalController` y para el cierre `ViewController`.
+
+Como ejemplo, podremos ir a una página modal desde la página principal mediante un botón. En `principal.ts` 
+
+[source]
+----
+import { ModalPage } from './../modal/modal'; <1>
+import { IonicPage, NavController, NavParams, ModalController } from 'ionic-angular'; <2>
+
+...
+
+export class PrincipalPage {
+
+  constructor(public navCtrl: NavController,
+    public navParams: NavParams,
+    public modalCtrl: ModalController) { <3>
+  }
+
+...
+
+  mostrarModal() {
+    this.modalCtrl.create( ModalPage ).present(); <4>
+  }
+
+}
+----
+<1> Importar la página modal a la que queremos ir para pasarla como parámetro
+<2> Importar `ModalController`
+<3> Inyectar el `ModalController` en el constructor
+<4> Crear la página y presentarla. Si no se presenta no aparecerá.
+
+En la página modal se creará un botón que permita su cierre. En el archivo `.ts` habrá que hacer estas modificaciones
+
+[source]
+----
+import { IonicPage, NavController, NavParams, ViewController } from 'ionic-angular'; <1>
+...
+
+export class ModalPage {
+
+  constructor(public navCtrl: NavController,
+    public navParams: NavParams,
+    public viewCtrl: ViewController) { <2>
+  } 
+
+  ...
+  
+  cerrarModal() {
+    this.viewCtrl.dismiss(); <3>
+
+  }
+}
+----
+<1> Importar `ViewController` ya que `NavController` no lleva la navegación de las páginas modales
+<2> Inyectar el `ViewController` en el constructor
+<3> Cerrar la página modal
+
+.Envío de parámetros con páginas modales
+****
+El envío a la página modal se hace de la forma habitual, enviando una lista JSON de parámetros al crear la página modal 
+
+[source]
+----
+  mostrarModal() {
+    let info = {"curso": "ionic"};
+    this.modalCtrl.create( ModalPage, info).present();
+  }
+----
+
+La recepción de parámetros en la página modal se hace de la forma habitual, con `navParams`
+
+[source]
+----
+  ionViewDidLoad() {
+    console.log(this.navParams.get('curso'));
+  }
+----
+
+Si queremos devolver parámetros desde la página modal, los enviaremos en el método `dismiss()`
+
+[source]
+----
+    this.viewCtrl.dismiss({'estado': 'cerrado'});
+----
+
+Estos parámetros se recogen en el método `onDidDismiss` de la página modal. Para poder acceder a este método, al crear la página modal debemos asignarla a una variable para poder manipularla
+
+[source]
+----
+  mostrarModal() {
+    let info = {"curso": "ionic"};
+    let modal = this.modalCtrl.create( ModalPage, info); <1>
+
+    modal.present();
+    modal.onDidDismiss(parametros => { <2>
+      console.log(parametros);
+    });
+  }
+----
+<1> Creación de la página modal y asignación a una variable
+<2> Captura de parámetros devueltos con el método `onDidDismiss()` y tratamiento de la respuesta con una función anónima
+
+****
+
+### Creación de un menú lateral
+
+Las aplicaciones que usan menú básicamente se dedican a cambiar `rootPage` en `app.component.ts`-
+
+Reemplazamos el contenido de `app.component.html` por este:
+
+[source]
+----
+<ion-menu [content]="content">
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Menu</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <ion-list>
+        <button ion-item (click)="abrirPagina(principal)"> <1>
+        Principal
+      </button>
+        <button ion-item (click)="abrirPagina(ajustes2)"> <2>
+          Ajustes 2
+        </button>
+      </ion-list>
+    </ion-content>
+  </ion-menu>
+
+<ion-nav [root]="rootPage" #content></ion-nav> <3>
+----
+
+<1> Primer elemento del menú
+<2> Segundo elemento del menú
+<3> Hay que añadir `#content` al elemento `<ion-nav>`
+
+En `app.component.ts` añadimos
+
+[sounce]
+----
+import { Ajustes2Page } from './../pages/ajustes2/ajustes2'; <1>
+import { PrincipalPage } from './../pages/principal/principal';
+
+....
+
+export class MyApp {
+  rootPage:any = TabsPage;
+  
+  principal = PrincipalPage; <2>
+  ajustes2 = Ajustes2Page;
+
+  ...
+
+  abrirPagina(pagina: any) { <3>
+    this.rootPage = pagina;
+  }
+}
+----
+
+<1> Importar las páginas que se van a incluir en el menú
+<2> Crear una variable de instancia para cada página del menú. Estas serán usadas desde la vista para indicar qué página hay que abrir
+<3> Método que asigna la nueva página `rootPage` 
+
+Para incluir el botón del menú incluiremos este código en cada una de las cabeceras de las páginas que lo van a incluir
+
+[source]
+----
+<ion-header>
+  <ion-navbar>
+    <ion-title>principal</ion-title>
+    <button ion-button icon-only menuToggle> <1>
+      <ion-icon name="menu"></ion-icon>
+    </button>
+  </ion-navbar>
+</ion-header>
+----
+<1> `menuToggle` es un atributo HTML que simplifica el control del menú evitando tener que crear un controlador de evento para abrir y cerrar el menú.
+
+[NOTE]
+====
+En la documentación de la API podemos ver la información relativa a _Config_. Esto permite cambiar la palabra predeterminada _Back_ para volver atrás por cualquier otra, establecer la posición de la barra de pestañas y demás.
+
+Para cambiar el texto del botón _Atrás_ editar el archivo `app.module.ts` 
+
+[source]
+----
+...
+@NgModule({
+  ...
+  imports: [
+    BrowserModule,
+    IonicModule.forRoot(MyApp, { <1>
+      backButtonText: 'Atrás'
+    })
+  ],
+  ...
+})
+...
+----
+<1> Configurar la lista JSON de propiedades deseadas
+====
+
+## Quiz
+
+1. ¿A qué se le conoce como "página root"?
+1. ¿Es posible cambiar la página root?
+1. ¿Es posible tener múltiples páginas root en una aplicación?
+1. ¿Qué es un modal?
+1. ¿El NavController, sirve para mostrar modals?
+
